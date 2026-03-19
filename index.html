@@ -1,1 +1,45 @@
-<script src="https://docspace-ddipri.onlyoffice.com/static/scripts/sdk/2.1.0/api.js?src=https%3A%2F%2Fdocspace-ddipri.onlyoffice.com&frameId=ds-frame&mode=public-room&id=2473906&width=100%25&height=100%25&showHeader=true&showTitle=true&showMenu=false&showFilter=true&requestToken=QnprQjhESlVFQndaeGFsWU0vTWFnMjhjeDhXVW41bzZraVZKTmlRZ3RJQT0_ImQ3MzM4YmFjLWY0MmUtNGEyYS1iYmZiLWJjOTI2YzAxOGY4NiI&init=true"></script>
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>ONLYOFFICE Room</title>
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+    }
+    #ds-frame {
+      width: 100%;
+      height: 100vh;
+    }
+  </style>
+</head>
+<body>
+
+<div id="ds-frame"></div>
+
+<script src="https://docspace-ddipri.onlyoffice.com/static/scripts/sdk/2.1.0/api.js"></script>
+
+<script>
+  const config = {
+    frameId: "ds-frame",
+    width: "100%",
+    height: "100%",
+    
+    mode: "public-room",
+    id: "2473906",
+
+    src: "https://docspace-ddipri.onlyoffice.com",
+
+    // UI options
+    showHeader: true,
+    showTitle: true,
+    showMenu: false,
+    showFilter: true
+  };
+
+  DocSpace.SDK.init(config);
+</script>
+
+</body>
+</html>
