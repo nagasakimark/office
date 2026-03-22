@@ -1,2 +1,55 @@
-<div id="ds-frame">読み込み中...</div>
+<div id="ds-frame" style="width:100%; height:600px;">読み込み中...</div>
+
 <script src="https://docspace-ddipri.onlyoffice.com/static/scripts/sdk/2.1.0/api.js?src=https%3A%2F%2Fdocspace-ddipri.onlyoffice.com&mode=public-room&width=100%25&height=100%25&frameId=ds-frame&showHeader=true&showTitle=true&showMenu=false&showFilter=true&disableActionButton=false&infoPanelVisible=false&init=true&filter%5Bcount%5D=100&filter%5Bpage%5D=1&filter%5Bsortorder%5D=descending&filter%5Bsortby%5D=DateAndTime&filter%5Bsearch%5D=&filter%5BwithSubfolders%5D=false&id=2473906&requestToken=QnprQjhESlVFQndaeGFsWU0vTWFnMjhjeDhXVW41bzZraVZKTmlRZ3RJQT0_ImQ3MzM4YmFjLWY0MmUtNGEyYS1iYmZiLWJjOTI2YzAxOGY4NiI&rootPath=%2Frooms%2Fshare"></script>
+
+<script>
+(function() {
+    const fontCSS = `
+        /* Map Montserrat Medium */
+        @font-face {
+            font-family: "Montserrat";
+            src: url("https://nagasakimark.github.io/office/1.ttf") format("truetype");
+            font-weight: 500;
+        }
+        /* Map Montserrat Thin */
+        @font-face {
+            font-family: "Montserrat";
+            src: url("https://nagasakimark.github.io/office/2.ttf") format("truetype");
+            font-weight: 100;
+        }
+        /* Map Montserrat ExtraLight */
+        @font-face {
+            font-family: "Montserrat";
+            src: url("https://nagasakimark.github.io/office/3.ttf") format("truetype");
+            font-weight: 200;
+        }
+
+        /* Force the Canvas to prioritize these external font-face rules */
+        canvas, .asc-window, .canvas-text-writer {
+            text-rendering: optimizeLegibility !important;
+            -webkit-font-smoothing: antialiased !important;
+        }
+    `;
+
+    const injectToIframe = () => {
+        const frames = document.querySelectorAll('iframe');
+        frames.forEach(frame => {
+            try {
+                const doc = frame.contentDocument || frame.contentWindow.document;
+                if (doc && !doc.getElementById('teacher-font-override')) {
+                    const style = doc.createElement('style');
+                    style.id = 'teacher-font-override';
+                    style.innerHTML = fontCSS;
+                    doc.head.appendChild(style);
+                    console.log("Handwriting weights injected into editor frame.");
+                }
+            } catch (e) {
+                // Cross-origin blocks might happen, but standard embeds usually allow this
+            }
+        });
+    };
+
+    // Run every 2 seconds to ensure it catches re-renders or tab switches
+    setInterval(injectToIframe, 2000);
+})();
+</script>
