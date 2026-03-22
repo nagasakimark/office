@@ -1,0 +1,16 @@
+{
+  "name": "NH Fonts",
+  "guid": "asc.{B1234567-89AB-4CDE-F012-3456789ABCDE}",
+  "baseUrl": "",
+  "variations": [
+    {
+      "description": "Insert NH Fonts",
+      "url": "index.html",
+      "icons": [],
+      "isViewer": false,
+      "EditorsSupport": ["word"]
+    }
+  ],
+  "pluginName": "NHFonts",
+  "version": "1.0.0"
+}
