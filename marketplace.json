@@ -1,0 +1,9 @@
+{
+  "plugins": [
+    {
+      "name": "NH Fonts",
+      "guid": "asc.{B1234567-89AB-4CDE-F012-3456789ABCDE}",
+      "url": "https://nagasakimark.github.io/nh-plugin/config.json"
+    }
+  ]
+}
