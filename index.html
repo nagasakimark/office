@@ -3,131 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>School Room Selector</title>
+    <title>Office</title>
     <style>
-        /* --- Chalkboard Theme --- */
         :root {
-            --board-green: #1a3c34; /* Deep chalkboard green */
+            --board-green: #1a3c34;
             --chalk-dust: rgba(255, 255, 255, 0.08);
             --wood-trim: #5d4037;
         }
 
         html, body {
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            width: 100%;
-            overflow: hidden;
-            background-color: var(--board-green);
+            margin: 0; padding: 0; height: 100%; width: 100%;
+            overflow: hidden; background-color: var(--board-green);
             font-family: 'Hiragino Kaku Gothic Pro', 'Meiryo', sans-serif;
         }
 
         #selection-screen {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            height: 100%;
-            position: absolute;
-            top: 0;
-            left: 0;
-            z-index: 10;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 10;
             transition: opacity 0.5s ease;
-            
-            /* Chalkboard Texture */
-            background: 
-                radial-gradient(circle at 50% 50%, var(--chalk-dust) 0%, transparent 70%),
-                linear-gradient(rgba(0,0,0,0.1) 1px, transparent 1px),
-                var(--board-green);
+            background: radial-gradient(circle at 50% 50%, var(--chalk-dust) 0%, transparent 70%),
+                        linear-gradient(rgba(0,0,0,0.1) 1px, transparent 1px), var(--board-green);
             background-size: 100% 100%, 100% 4px, auto;
         }
 
-        /* Wooden Ledge */
         #selection-screen::after {
-            content: "";
-            position: absolute;
-            bottom: 0;
-            width: 100%;
-            height: 20px;
-            background: var(--wood-trim);
-            border-top: 4px solid #3e2723;
-            box-shadow: 0 -5px 15px rgba(0,0,0,0.3);
+            content: ""; position: absolute; bottom: 0; width: 100%; height: 20px;
+            background: var(--wood-trim); border-top: 4px solid #3e2723;
         }
 
-        body.room-loaded #selection-screen {
-            opacity: 0;
-            pointer-events: none;
-        }
+        body.room-loaded #selection-screen { opacity: 0; pointer-events: none; }
 
-        h1 {
-            color: rgba(255, 255, 255, 0.9);
-            font-size: 2.8rem;
-            margin-bottom: 3rem;
-            text-shadow: 2px 2px 0px rgba(0,0,0,0.2);
-            font-weight: bold;
-        }
+        h1 { color: white; font-size: 2.8rem; margin-bottom: 3rem; text-shadow: 2px 2px 0px rgba(0,0,0,0.2); }
 
-        #school-options {
-            display: flex;
-            gap: 50px;
-            z-index: 11;
-        }
+        #school-options { display: flex; gap: 50px; z-index: 11; }
 
-        .school-card {
-            cursor: pointer;
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
+        .school-card { cursor: pointer; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .school-card:hover { transform: scale(1.06) translateY(-10px); }
 
         .image-frame {
-            /* Chalk Border */
-            border: 14px solid #ffffff;
-            border-radius: 2px;
-            box-shadow: 
-                inset 0 0 10px rgba(0,0,0,0.5),
-                0 20px 40px rgba(0,0,0,0.6);
-            
-            /* Fixed 4:3 Aspect Ratio to prevent title cutoff */
-            width: 400px;  
-            height: 300px; 
-            
-            overflow: hidden;
-            background: #222;
+            border: 14px solid #ffffff; border-radius: 2px;
+            width: 400px; height: 300px; overflow: hidden; background: #222;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
         }
 
-        .image-frame img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            filter: brightness(0.9); 
-            transition: filter 0.3s;
-        }
+        .image-frame img { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.9); }
 
-        /* Hover interaction */
-        .school-card:hover {
-            transform: scale(1.06) translateY(-10px);
-        }
-        
-        .school-card:hover img {
-            filter: brightness(1.1);
-        }
-
-        /* --- Embed Container --- */
-        #ds-frame {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-            background-color: #ffffff; 
-        }
-
-        @media (max-width: 900px) {
-            #school-options { flex-direction: column; gap: 30px; }
-            .image-frame { width: 300px; height: 225px; border-width: 10px; }
-            h1 { font-size: 1.8rem; margin-bottom: 2rem; }
-        }
+        #ds-frame { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; background: white; }
     </style>
 </head>
 <body>
@@ -136,63 +57,43 @@
 
     <div id="selection-screen">
         <h1>学校を選択してください</h1>
-        
         <div id="school-options">
-            <div class="school-card" onclick="loadRoom('2473906')">
-                <div class="image-frame">
-                    <img src="elementary.png" alt="Elementary">
-                </div>
+            <div class="school-card" onclick="loadRoom('2473906', 'QnprQjhESlVFQndaeGFsWU0vTWFnMjhjeDhXVW41bzZraVZKTmlRZ3RJQT0_ImQ3MzM4YmFjLWY0MmUtNGEyYS1iYmZiLWJjOTI2YzAxOGY4NiI')">
+                <div class="image-frame"><img src="elementary.png" alt="Elementary"></div>
             </div>
-
-            <div class="school-card" onclick="loadRoom('2484523')">
-                <div class="image-frame">
-                    <img src="jhs.png" alt="JHS">
-                </div>
+            <div class="school-card" onclick="loadRoom('2484523', 'SlVpM1F3a0wybW8wRDVSbitiTmRpRlpCMGxtYTRSYmI2dzhqREpxOS8zcz0_IjM3NjQ5ODIwLTllYzEtNDhkNi04MDg1LTMxNTJjZTJkMDVhYSI')">
+                <div class="image-frame"><img src="jhs.png" alt="JHS"></div>
             </div>
         </div>
     </div>
 
     <script>
-        function loadRoom(roomId) {
-            const body = document.body;
-            const dsFrame = document.getElementById('ds-frame');
-
-            // Hide UI and show loader
-            body.classList.add('room-loaded');
-            dsFrame.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; height:100%; font-size:24px; color:#555; background-color:white;">読み込み中...</div>';
-
+        function loadRoom(roomId, token) {
+            document.body.classList.add('room-loaded');
+            
+            // We use the full set of filter queries that ONLYOFFICE expects for its public initialization
             const script = document.createElement('script');
-            
-            /** * PARAMETER BREAKDOWN:
-             * filter[sortby]=Name       -> Alphabetical order
-             * filter[sortorder]=ascending -> A to Z
-             * filter[view]=9             -> Grid/Thumbnail view
-             */
-            const baseUrl = "https://docspace-ddipri.onlyoffice.com/static/scripts/sdk/2.1.0/api.js";
-            const params = [
-                `src=https%3A%2F%2Fdocspace-ddipri.onlyoffice.com`,
-                `mode=public-room`,
-                `width=100%25`,
-                `height=100%25`,
-                `frameId=ds-frame`,
-                `showHeader=true`,
-                `showTitle=true`,
-                `showMenu=false`,
-                `showFilter=true`,
-                `disableActionButton=false`,
-                `infoPanelVisible=false`,
-                `init=true`,
-                `filter%5Bcount%5D=100`,
-                `filter%5Bpage%5D=1`,
-                `filter%5Bsortorder%5D=ascending`,
-                `filter%5Bsortby%5D=Name`,
-                `filter%5Bview%5D=9`,
-                `filter%5BwithSubfolders%5D=false`,
-                `id=${roomId}`
-            ].join('&');
+            const params = new URLSearchParams({
+                src: 'https://docspace-ddipri.onlyoffice.com',
+                mode: 'public-room',
+                id: roomId,
+                requestToken: token,
+                frameId: 'ds-frame',
+                width: '100%',
+                height: '100%',
+                init: 'true',
+                showHeader: 'true',
+                showTitle: 'true',
+                showMenu: 'false',
+                showFilter: 'true',
+                // This specific combination is most reliable for forcing Thumbnail/Alphabetical view
+                'filter[sortby]': 'Name',
+                'filter[sortorder]': 'ascending',
+                'filter[view]': '9', // 9 = Thumbnail/Grid view
+                'filter[count]': '100'
+            });
 
-            script.src = `${baseUrl}?${params}`;
-            
+            script.src = `https://docspace-ddipri.onlyoffice.com/static/scripts/sdk/2.1.0/api.js?${params.toString()}`;
             document.body.appendChild(script);
         }
     </script>
