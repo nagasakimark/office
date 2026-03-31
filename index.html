@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Office</title>
+    <title>School Room Selector</title>
     <style>
         /* --- Chalkboard Theme --- */
         :root {
@@ -18,7 +18,7 @@
             height: 100%;
             width: 100%;
             overflow: hidden;
-            background-color: var(--board-green); /* Fallback */
+            background-color: var(--board-green);
             font-family: 'Hiragino Kaku Gothic Pro', 'Meiryo', sans-serif;
         }
 
@@ -35,7 +35,7 @@
             z-index: 10;
             transition: opacity 0.5s ease;
             
-            /* Enhanced Chalkboard Texture */
+            /* Chalkboard Texture */
             background: 
                 radial-gradient(circle at 50% 50%, var(--chalk-dust) 0%, transparent 70%),
                 linear-gradient(rgba(0,0,0,0.1) 1px, transparent 1px),
@@ -43,7 +43,7 @@
             background-size: 100% 100%, 100% 4px, auto;
         }
 
-        /* The "Wooden Ledge" at the bottom */
+        /* Wooden Ledge */
         #selection-screen::after {
             content: "";
             position: absolute;
@@ -63,7 +63,7 @@
         h1 {
             color: rgba(255, 255, 255, 0.9);
             font-size: 2.8rem;
-            margin-bottom: 3rem; /* Reduced slightly for layout balance */
+            margin-bottom: 3rem;
             text-shadow: 2px 2px 0px rgba(0,0,0,0.2);
             font-weight: bold;
         }
@@ -80,16 +80,16 @@
         }
 
         .image-frame {
-            /* Thick Chalky Border */
+            /* Chalk Border */
             border: 14px solid #ffffff;
             border-radius: 2px;
             box-shadow: 
                 inset 0 0 10px rgba(0,0,0,0.5),
                 0 20px 40px rgba(0,0,0,0.6);
             
-            /* REVERTED TO PREVIOUS ASPECT RATIO/SIZE */
-            width: 400px;  /* Same width as last version */
-            height: 300px; /* REVERTED: Changed back from 260px to 300px to fix cutoff */
+            /* Fixed 4:3 Aspect Ratio to prevent title cutoff */
+            width: 400px;  
+            height: 300px; 
             
             overflow: hidden;
             background: #222;
@@ -98,9 +98,7 @@
         .image-frame img {
             width: 100%;
             height: 100%;
-            object-fit: cover; /* Ensures image fills the area without distortion, though original aspect is preferred */
-            /* object-fit: contain; */ /* Alternative: if images are exactly 4:3, use contain to ensure nothing is trimmed at all, but might leave black bars if aspect ratios differ slightly. */
-            
+            object-fit: cover;
             filter: brightness(0.9); 
             transition: filter 0.3s;
         }
@@ -122,12 +120,12 @@
             width: 100%;
             height: 100%;
             z-index: 1;
-            background-color: #ffffff; /* The ONLYOFFICE room background */
+            background-color: #ffffff; 
         }
 
         @media (max-width: 900px) {
             #school-options { flex-direction: column; gap: 30px; }
-            .image-frame { width: 300px; height: 225px; border-width: 10px; } /* Maintained the correct aspect ratio on mobile too (4:3) */
+            .image-frame { width: 300px; height: 225px; border-width: 10px; }
             h1 { font-size: 1.8rem; margin-bottom: 2rem; }
         }
     </style>
@@ -159,11 +157,41 @@
             const body = document.body;
             const dsFrame = document.getElementById('ds-frame');
 
+            // Hide UI and show loader
             body.classList.add('room-loaded');
             dsFrame.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; height:100%; font-size:24px; color:#555; background-color:white;">読み込み中...</div>';
 
             const script = document.createElement('script');
-            script.src = `https://docspace-ddipri.onlyoffice.com/static/scripts/sdk/2.1.0/api.js?src=https%3A%2F%2Fdocspace-ddipri.onlyoffice.com&mode=public-room&width=100%25&height=100%25&frameId=ds-frame&showHeader=true&showTitle=true&showMenu=false&showFilter=true&disableActionButton=false&infoPanelVisible=false&init=true&id=${roomId}`;
+            
+            /** * PARAMETER BREAKDOWN:
+             * filter[sortby]=Name       -> Alphabetical order
+             * filter[sortorder]=ascending -> A to Z
+             * filter[view]=9             -> Grid/Thumbnail view
+             */
+            const baseUrl = "https://docspace-ddipri.onlyoffice.com/static/scripts/sdk/2.1.0/api.js";
+            const params = [
+                `src=https%3A%2F%2Fdocspace-ddipri.onlyoffice.com`,
+                `mode=public-room`,
+                `width=100%25`,
+                `height=100%25`,
+                `frameId=ds-frame`,
+                `showHeader=true`,
+                `showTitle=true`,
+                `showMenu=false`,
+                `showFilter=true`,
+                `disableActionButton=false`,
+                `infoPanelVisible=false`,
+                `init=true`,
+                `filter%5Bcount%5D=100`,
+                `filter%5Bpage%5D=1`,
+                `filter%5Bsortorder%5D=ascending`,
+                `filter%5Bsortby%5D=Name`,
+                `filter%5Bview%5D=9`,
+                `filter%5BwithSubfolders%5D=false`,
+                `id=${roomId}`
+            ].join('&');
+
+            script.src = `${baseUrl}?${params}`;
             
             document.body.appendChild(script);
         }
