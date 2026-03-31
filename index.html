@@ -1,2 +1,172 @@
-<div id="ds-frame">読み込み中...</div>
-<script src="https://docspace-ddipri.onlyoffice.com/static/scripts/sdk/2.1.0/api.js?src=https%3A%2F%2Fdocspace-ddipri.onlyoffice.com&mode=public-room&width=100%25&height=100%25&frameId=ds-frame&showHeader=true&showTitle=true&showMenu=false&showFilter=true&disableActionButton=false&infoPanelVisible=false&init=true&filter%5Bcount%5D=100&filter%5Bpage%5D=1&filter%5Bsortorder%5D=descending&filter%5Bsortby%5D=DateAndTime&filter%5Bsearch%5D=&filter%5BwithSubfolders%5D=false&id=2473906&requestToken=QnprQjhESlVFQndaeGFsWU0vTWFnMjhjeDhXVW41bzZraVZKTmlRZ3RJQT0_ImQ3MzM4YmFjLWY0MmUtNGEyYS1iYmZiLWJjOTI2YzAxOGY4NiI&rootPath=%2Frooms%2Fshare"></script>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Office</title>
+    <style>
+        /* --- Chalkboard Theme --- */
+        :root {
+            --board-green: #1a3c34; /* Deep chalkboard green */
+            --chalk-dust: rgba(255, 255, 255, 0.08);
+            --wood-trim: #5d4037;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+            background-color: var(--board-green); /* Fallback */
+            font-family: 'Hiragino Kaku Gothic Pro', 'Meiryo', sans-serif;
+        }
+
+        #selection-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 10;
+            transition: opacity 0.5s ease;
+            
+            /* Enhanced Chalkboard Texture */
+            background: 
+                radial-gradient(circle at 50% 50%, var(--chalk-dust) 0%, transparent 70%),
+                linear-gradient(rgba(0,0,0,0.1) 1px, transparent 1px),
+                var(--board-green);
+            background-size: 100% 100%, 100% 4px, auto;
+        }
+
+        /* The "Wooden Ledge" at the bottom */
+        #selection-screen::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 20px;
+            background: var(--wood-trim);
+            border-top: 4px solid #3e2723;
+            box-shadow: 0 -5px 15px rgba(0,0,0,0.3);
+        }
+
+        body.room-loaded #selection-screen {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        h1 {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 2.8rem;
+            margin-bottom: 3rem; /* Reduced slightly for layout balance */
+            text-shadow: 2px 2px 0px rgba(0,0,0,0.2);
+            font-weight: bold;
+        }
+
+        #school-options {
+            display: flex;
+            gap: 50px;
+            z-index: 11;
+        }
+
+        .school-card {
+            cursor: pointer;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .image-frame {
+            /* Thick Chalky Border */
+            border: 14px solid #ffffff;
+            border-radius: 2px;
+            box-shadow: 
+                inset 0 0 10px rgba(0,0,0,0.5),
+                0 20px 40px rgba(0,0,0,0.6);
+            
+            /* REVERTED TO PREVIOUS ASPECT RATIO/SIZE */
+            width: 400px;  /* Same width as last version */
+            height: 300px; /* REVERTED: Changed back from 260px to 300px to fix cutoff */
+            
+            overflow: hidden;
+            background: #222;
+        }
+
+        .image-frame img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* Ensures image fills the area without distortion, though original aspect is preferred */
+            /* object-fit: contain; */ /* Alternative: if images are exactly 4:3, use contain to ensure nothing is trimmed at all, but might leave black bars if aspect ratios differ slightly. */
+            
+            filter: brightness(0.9); 
+            transition: filter 0.3s;
+        }
+
+        /* Hover interaction */
+        .school-card:hover {
+            transform: scale(1.06) translateY(-10px);
+        }
+        
+        .school-card:hover img {
+            filter: brightness(1.1);
+        }
+
+        /* --- Embed Container --- */
+        #ds-frame {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            background-color: #ffffff; /* The ONLYOFFICE room background */
+        }
+
+        @media (max-width: 900px) {
+            #school-options { flex-direction: column; gap: 30px; }
+            .image-frame { width: 300px; height: 225px; border-width: 10px; } /* Maintained the correct aspect ratio on mobile too (4:3) */
+            h1 { font-size: 1.8rem; margin-bottom: 2rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="ds-frame"></div>
+
+    <div id="selection-screen">
+        <h1>学校を選択してください</h1>
+        
+        <div id="school-options">
+            <div class="school-card" onclick="loadRoom('2473906')">
+                <div class="image-frame">
+                    <img src="elementary.png" alt="Elementary">
+                </div>
+            </div>
+
+            <div class="school-card" onclick="loadRoom('2484523')">
+                <div class="image-frame">
+                    <img src="jhs.png" alt="JHS">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function loadRoom(roomId) {
+            const body = document.body;
+            const dsFrame = document.getElementById('ds-frame');
+
+            body.classList.add('room-loaded');
+            dsFrame.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; height:100%; font-size:24px; color:#555; background-color:white;">読み込み中...</div>';
+
+            const script = document.createElement('script');
+            script.src = `https://docspace-ddipri.onlyoffice.com/static/scripts/sdk/2.1.0/api.js?src=https%3A%2F%2Fdocspace-ddipri.onlyoffice.com&mode=public-room&width=100%25&height=100%25&frameId=ds-frame&showHeader=true&showTitle=true&showMenu=false&showFilter=true&disableActionButton=false&infoPanelVisible=false&init=true&id=${roomId}`;
+            
+            document.body.appendChild(script);
+        }
+    </script>
+</body>
+</html>
