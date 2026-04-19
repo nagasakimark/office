@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <link href="logo.png" rel="shortcut icon" />
+    <link rel="icon" type="image/png" href="logo.png" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#0052cc" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  <title>Document Editor</title>
+  <script src="web-apps/apps/api/documents/api.js"></script>
+  <!-- Google APIs for Drive Picker -->
+  <script>
+    function onGapiLoad() { document.dispatchEvent(new Event('gapi-loaded')); }
+    function onGisLoad() { document.dispatchEvent(new Event('gis-loaded')); }
+  </script>
+  <script async defer src="https://apis.google.com/js/api.js" onload="onGapiLoad()"></script>
+  <script async defer src="https://accounts.google.com/gsi/client" onload="onGisLoad()"></script>
+  <script type="module" crossorigin src="/office/assets/index-BPfWqmbm.js"></script>
+  <link rel="stylesheet" crossorigin href="/office/assets/index-C__iuluT.css">
+</head>
+
+<body>
+  <div id="app" class="w-full h-full">
+    <div id="iframe" class="w-full h-full"></div>
+  </div>
+</body>
+
+</html>

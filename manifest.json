@@ -1,0 +1,17 @@
+{
+  "name": "Document Editor",
+  "short_name": "Editor",
+  "description": "A local web-based document editor based on OnlyOffice.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0052cc",
+  "icons": [
+    {
+      "src": "./logo.png",
+      "sizes": "512x512 192x192 144x144 64x64 any",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
