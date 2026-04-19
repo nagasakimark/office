@@ -1,122 +1,86 @@
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v3';
 const CACHE_NAME = `document-editor-${CACHE_VERSION}`;
+const FONT_CACHE_NAME = `document-editor-fonts-${CACHE_VERSION}`;
 
-// Critical resources that must be pre-cached for offline support.
-// These are the core files needed to launch the editor UI and load documents.
-const PRECACHE_ASSETS = [
-  './',
-  './index.html',
-  './manifest.json',
-
-  // Icons & images
-  './logo.png',
-  './img/elementary.png',
-  './img/jhs.png',
-  './img/doc-formats/docx.png',
-  './img/doc-formats/xlsx.png',
-  './img/doc-formats/pptx.png',
-  './img/icon/word.ico',
-  './img/icon/excel.ico',
-  './img/icon/ppt.ico',
-
-  // OnlyOffice API entry point
-  './web-apps/apps/api/documents/api.js',
-  './web-apps/vendor/jquery/jquery.min.js',
-  './web-apps/vendor/requirejs/require.js',
-
-  // Document editor
-  './web-apps/apps/documenteditor/main/index.html',
-  './web-apps/apps/documenteditor/main/app.js',
-  './web-apps/apps/documenteditor/main/loading.js',
-  './web-apps/apps/documenteditor/main/locale/en.json',
-  './web-apps/apps/documenteditor/main/locale/zh.json',
-  './web-apps/apps/documenteditor/main/resources/css/app.css',
-  './web-apps/apps/documenteditor/main/resources/watermark/wm-text.json',
-
-  // Spreadsheet editor
-  './web-apps/apps/spreadsheeteditor/main/index.html',
-  './web-apps/apps/spreadsheeteditor/main/index_internal.html',
-  './web-apps/apps/spreadsheeteditor/main/app.js',
-  './web-apps/apps/spreadsheeteditor/main/loading.js',
-  './web-apps/apps/spreadsheeteditor/main/locale/en.json',
-  './web-apps/apps/spreadsheeteditor/main/locale/zh.json',
-  './web-apps/apps/spreadsheeteditor/main/resources/css/app.css',
-  './web-apps/apps/spreadsheeteditor/main/resources/formula-lang/en.json',
-  './web-apps/apps/spreadsheeteditor/main/resources/formula-lang/en_desc.json',
-  './web-apps/apps/spreadsheeteditor/main/resources/formula-lang/zh.json',
-  './web-apps/apps/spreadsheeteditor/main/resources/formula-lang/zh_desc.json',
-
-  // Presentation editor
-  './web-apps/apps/presentationeditor/main/index.html',
-  './web-apps/apps/presentationeditor/main/index.reporter.html',
-  './web-apps/apps/presentationeditor/main/app.js',
-  './web-apps/apps/presentationeditor/main/app.reporter.js',
-  './web-apps/apps/presentationeditor/main/loading.js',
-  './web-apps/apps/presentationeditor/main/locale/en.json',
-  './web-apps/apps/presentationeditor/main/locale/zh.json',
-  './web-apps/apps/presentationeditor/main/resources/css/app.css',
-
-  // Common web-apps resources
-  './web-apps/apps/common/main/lib/util/min-log.js',
-  './web-apps/apps/common/main/resources/themes/themes.json',
-
-  // SDK core JS (min versions for production)
-  './sdkjs/word/sdk-all-min.js',
-  './sdkjs/cell/sdk-all-min.js',
-  './sdkjs/slide/sdk-all-min.js',
-  './sdkjs/word/sdk-all.js',
-  './sdkjs/cell/sdk-all.js',
-  './sdkjs/slide/sdk-all.js',
-  './sdkjs/cell/css/main.css',
-
-  // Common SDK resources
-  './sdkjs/common/AllFonts.js',
-  './sdkjs/common/Charts/ChartStyles.js',
-  './sdkjs/common/libfont/engine/fonts.js',
-  './sdkjs/common/libfont/engine/fonts.wasm',
-  './sdkjs/common/libfont/engine/fonts_native.js',
-  './sdkjs/common/Native/jquery_native.js',
-  './sdkjs/common/Native/native.js',
-  './sdkjs/common/zlib/engine/zlib.js',
-  './sdkjs/common/zlib/engine/zlib.wasm',
-  './sdkjs/slide/themes/themes.js',
-
-  // WASM converter (JS loader only; the large .wasm binary is runtime-cached on first use)
-  './wasm/x2t/x2t.js',
-
-  // Common web-apps font & loading indicator
-  './web-apps/apps/common/main/resources/font/ASC.ttf',
-  './web-apps/apps/common/main/resources/img/load-mask/loading.svg',
-
-  // SheetJS
-  './libs/sheetjs/xlsx.full.min.js',
-];
-
-// Install event: Pre-cache critical assets for offline support.
-// Uses individual cache.add() calls so a single missing/failing asset
-// does not abort the entire SW installation.
+// ─── Install ────────────────────────────────────────────────────────────────
+// 1. Fetch the build-time manifest that lists every file in the app.
+// 2. Cache all non-font assets synchronously (blocks install completion so the
+//    app is immediately fully offline-capable for the UI + editors).
+// 3. Start downloading the 613 font binaries in the background without
+//    blocking install — they accumulate across sessions until all are cached.
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return Promise.allSettled(
-        PRECACHE_ASSETS.map((url) =>
-          cache.add(url).catch((err) => {
-            console.warn('[SW] Failed to precache (skipping):', url, err.message);
-          })
-        )
-      );
-    }),
+    fetch('./precache-manifest.json')
+      .then((r) => {
+        if (!r.ok) throw new Error('Could not fetch precache-manifest.json');
+        return r.json();
+      })
+      .then(({ assets, fonts }) => {
+        return caches.open(CACHE_NAME).then(async (cache) => {
+          // Cache all non-font assets — a failed individual fetch is skipped,
+          // not fatal, so a missing image never aborts the whole install.
+          await Promise.allSettled(
+            (assets || []).map((url) =>
+              cache.add(url).catch((err) => {
+                console.warn('[SW] precache skip:', url, err.message);
+              }),
+            ),
+          );
+
+          // Background-download font binaries without blocking install.
+          // Uses a dedicated cache so font data persists across CACHE_VERSION
+          // bumps (fonts don't change between app updates).
+          caches.open(FONT_CACHE_NAME).then(async (fontCache) => {
+            for (const url of (fonts || [])) {
+              try {
+                const already = await fontCache.match(url);
+                if (!already) await fontCache.add(url);
+              } catch {
+                // Network unavailable etc. — will retry on next visit.
+              }
+            }
+            console.log('[SW] All font binaries cached.');
+          });
+        });
+      })
+      .catch(async (err) => {
+        // Manifest fetch failed (e.g. first offline install) — fall back to
+        // the hard-coded critical-asset list so the app still works.
+        console.warn('[SW] Manifest unavailable, using fallback list:', err.message);
+        const FALLBACK = [
+          './',
+          './index.html',
+          './manifest.json',
+          './web-apps/apps/api/documents/api.js',
+          './web-apps/apps/documenteditor/main/index.html',
+          './web-apps/apps/documenteditor/main/app.js',
+          './web-apps/apps/spreadsheeteditor/main/index.html',
+          './web-apps/apps/spreadsheeteditor/main/app.js',
+          './web-apps/apps/presentationeditor/main/index.html',
+          './web-apps/apps/presentationeditor/main/app.js',
+          './sdkjs/word/sdk-all-min.js',
+          './sdkjs/cell/sdk-all-min.js',
+          './sdkjs/slide/sdk-all-min.js',
+          './sdkjs/common/AllFonts.js',
+          './wasm/x2t/x2t.js',
+        ];
+        const cache = await caches.open(CACHE_NAME);
+        await Promise.allSettled(FALLBACK.map((u) => cache.add(u).catch(() => {})));
+      }),
   );
   self.skipWaiting();
 });
 
-// Activate event: Clean up old caches
+// ─── Activate ───────────────────────────────────────────────────────────────
+// Delete outdated main caches.  The font cache has its own versioned name and
+// is kept as long as the version matches — fonts don't change between deploys.
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
+          // Keep current main cache and current font cache; delete everything else.
+          if (cacheName !== CACHE_NAME && cacheName !== FONT_CACHE_NAME) {
             return caches.delete(cacheName);
           }
         }),
@@ -126,69 +90,71 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Fetch event: Cache-first for offline PWA support
+// ─── Fetch ───────────────────────────────────────────────────────────────────
+// Strategy:
+//   • HTML / navigation  → network-first, cache fallback (ignores query params)
+//   • Font binaries      → font cache first, then main cache, then network
+//                          (adds to font cache if fetched from network)
+//   • Everything else    → cache-first (main cache), network fallback + store
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // Only handle GET requests
   if (event.request.method !== 'GET') return;
-
-  // Only handle same-origin requests
   if (url.origin !== self.location.origin) return;
 
-  // The OnlyOffice editor loads iframe HTML with many query parameters
-  // (e.g., ?_dc=0&lang=en&_document=...&_config=...).
-  // We need to match cache entries ignoring these query params.
+  const isFontBinary = /\/fonts\/\d+$/.test(url.pathname);
   const isHtml = url.pathname.endsWith('.html') || url.pathname.endsWith('/');
   const isNavigation = event.request.mode === 'navigate';
-    // Do NOT intercept the 613 font binaries (/fonts/000 to /fonts/612) into service worker cache
-    // since they total ~750MB and can freeze the browser storage or exceed quotas.
-    if (url.pathname.match(/\/fonts\/\d{3}$/)) {
-      return;
-    }
+
+  if (isFontBinary) {
+    // Font binaries: check font cache → main cache → network (and store in font cache)
+    event.respondWith(
+      caches.open(FONT_CACHE_NAME).then(async (fontCache) => {
+        const cached = await fontCache.match(event.request);
+        if (cached) return cached;
+        // Also check the main cache (older cached entries)
+        const mainCached = await caches.match(event.request);
+        if (mainCached) return mainCached;
+        // Fetch from network and store in font cache
+        const networkResponse = await fetch(event.request);
+        if (networkResponse && networkResponse.status === 200) {
+          fontCache.put(event.request, networkResponse.clone());
+        }
+        return networkResponse;
+      }),
+    );
+    return;
+  }
+
   if (isNavigation || isHtml) {
-    // Network-first for HTML/navigation, with cache fallback for offline.
-    // Use ignoreSearch so cached HTML matches regardless of query parameters.
+    // Network-first for HTML/navigation, cache fallback for offline.
     event.respondWith(
       fetch(event.request)
         .then((networkResponse) => {
           if (networkResponse && networkResponse.status === 200) {
-            const responseToCache = networkResponse.clone();
-            // Cache using a clean URL (no query params) so it always matches
             const cleanUrl = url.origin + url.pathname;
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(cleanUrl, responseToCache);
-            });
+            caches.open(CACHE_NAME).then((cache) => cache.put(cleanUrl, networkResponse.clone()));
             return networkResponse;
           }
           return caches.match(event.request, { ignoreSearch: true })
             .then((cached) => cached || networkResponse);
         })
-        .catch(() => {
-          return caches.match(event.request, { ignoreSearch: true });
-        })
+        .catch(() => caches.match(event.request, { ignoreSearch: true })),
     );
     return;
   }
 
-  // For all other same-origin static assets: Cache-first with network fallback.
-  // This ensures the app works fully offline after the first visit.
-  // Fonts, images, JS, CSS, WASM binaries are all cached on first fetch.
+  // All other static assets: cache-first, network fallback + cache for next time.
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-      // Not in cache — fetch from network and cache for future offline use
+      if (cachedResponse) return cachedResponse;
       return fetch(event.request).then((networkResponse) => {
         if (networkResponse && networkResponse.status === 200) {
-          const responseToCache = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseToCache);
-          });
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, networkResponse.clone()));
         }
         return networkResponse;
       });
     }),
   );
 });
+
