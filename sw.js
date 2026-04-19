@@ -200,15 +200,19 @@ self.addEventListener('message', function(event) {
       await Promise.allSettled(batch.map(async function(url) {
         const name = url.split('/').pop();
         try {
-          if (await opfsHasFont(name)) { fontLoaded++; return; }
-          const r = await safeFetch(url);
-          if (!r) { fontLoaded++; return; }
-          const buf = await r.arrayBuffer();
-          await opfsWriteFont(name, buf);
+          if (!await opfsHasFont(name)) {
+            const r = await safeFetch(url);
+            if (r) {
+              const buf = await r.arrayBuffer();
+              await opfsWriteFont(name, buf);
+            } else {
+              console.warn('[SW] font fetch failed:', name);
+            }
+          }
         } catch (e) {
           console.warn('[SW] font skip:', name, e.message);
         }
-        fontLoaded++;
+        fontLoaded++;  // exactly once per font, regardless of outcome
       }));
       const total = alreadyDone + fontLoaded;
       if (fontLoaded % 50 === 0 || total >= fontTotal) {
