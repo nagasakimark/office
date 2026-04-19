@@ -1,15 +1,15 @@
 // -----------------------------------------------------------------------------
-//  Service Worker  —  Full Offline PWA
+//  Service Worker  ï¿½  Full Offline PWA
 //
 //  Storage strategy:
-//    • navigator.storage.persist()  — prevent Cache API eviction
-//    • Cache API     — all non-font app assets (JS, CSS, HTML, images, WASM…)
-//    • OPFS          — the 613 numbered font binary chunks (downloaded in bg)
+//    ï¿½ navigator.storage.persist()  ï¿½ prevent Cache API eviction
+//    ï¿½ Cache API     ï¿½ all non-font app assets (JS, CSS, HTML, images, WASMï¿½)
+//    ï¿½ OPFS          ï¿½ the 613 numbered font binary chunks (downloaded in bg)
 //
 //  Fetch strategy:
-//    • Navigation/HTML ? network-first, cache fallback, then inline offline page
-//    • Font binaries   ? OPFS-first ? Cache-API ? network (store in OPFS)
-//    • Everything else ? Cache-first ? network (store in cache)
+//    ï¿½ Navigation/HTML ? network-first, cache fallback, then inline offline page
+//    ï¿½ Font binaries   ? OPFS-first ? Cache-API ? network (store in OPFS)
+//    ï¿½ Everything else ? Cache-first ? network (store in cache)
 //
 //  Progress: posted to all open clients via postMessage so the UI can show
 //  a progress bar.  Also logged to the console.
@@ -142,44 +142,84 @@ self.addEventListener('install', function(event) {
         await broadcast({ type: 'INSTALL_PROGRESS', phase: 'assets', loaded: loaded, total: total, pct: pct });
       }
     }
-    console.log('[SW] All assets cached. Starting background font download...');
-
-    // 4. Download font binaries to OPFS in the background (non-blocking).
-    (async function() {
-      const fontTotal   = fonts.length;
-      let   fontLoaded  = 0;
-      const FBATCH      = 5;
-
-      if (fontTotal === 0) return;
-      await broadcast({ type: 'INSTALL_PROGRESS', phase: 'fonts', loaded: 0, total: fontTotal, pct: 0 });
-
-      for (const batch of chunk(fonts, FBATCH)) {
-        await Promise.allSettled(batch.map(async function(url) {
-          const name = url.split('/').pop();
-          try {
-            if (await opfsHasFont(name)) return;
-            const r = await safeFetch(url);
-            if (!r) return;
-            const buf = await r.arrayBuffer();
-            await opfsWriteFont(name, buf);
-          } catch (e) {
-            console.warn('[SW] font skip:', name, e.message);
-          }
-        }));
-        fontLoaded += batch.length;
-        if (fontLoaded % 100 === 0 || fontLoaded === fontTotal) {
-          const pct = Math.round(fontLoaded / fontTotal * 100);
-          console.log('[SW] Fonts ' + fontLoaded + '/' + fontTotal + ' (' + pct + '%)');
-          await broadcast({ type: 'INSTALL_PROGRESS', phase: 'fonts', loaded: fontLoaded, total: fontTotal, pct: pct });
-        }
-      }
-      console.log('[SW] All font binaries stored in OPFS.');
-      await broadcast({ type: 'INSTALL_COMPLETE' });
-    })();
+    console.log('[SW] All assets cached. Font download will start when the PWA is installed.');
+    await broadcast({ type: 'ASSETS_READY' });
 
   })());
 
   self.skipWaiting();
+});
+
+// -------------------------------------------------------------------------------
+//  MESSAGE â€” font download triggered by the page (PWA install / resume)
+// -------------------------------------------------------------------------------
+// Font download is intentionally NOT automatic on first visit.
+// The page sends { type: 'START_FONT_DOWNLOAD' } only when the user has
+// installed the PWA.  event.waitUntil() keeps the SW alive for the full
+// download â€” this is the fix for the 16%-stall caused by the SW being
+// killed when it went idle mid-download.
+self.addEventListener('message', function(event) {
+  if (!event.data || event.data.type !== 'START_FONT_DOWNLOAD') return;
+
+  event.waitUntil((async function() {
+    // Re-fetch the manifest from cache so this works offline too.
+    let fonts = [];
+    try {
+      const cached = await caches.match('./precache-manifest.json')
+                  || await fetch('./precache-manifest.json');
+      if (cached && cached.ok) {
+        const data = await cached.json();
+        fonts = data.fonts || [];
+      }
+    } catch (e) {
+      console.warn('[SW] Could not load manifest for font download:', e.message);
+      return;
+    }
+
+    const fontTotal  = fonts.length;
+    let   fontLoaded = 0;
+    const FBATCH     = 5;
+
+    if (fontTotal === 0) return;
+
+    // Count how many are already in OPFS so we can show a real starting point.
+    let alreadyDone = 0;
+    for (const url of fonts) {
+      if (await opfsHasFont(url.split('/').pop())) alreadyDone++;
+    }
+    if (alreadyDone === fontTotal) {
+      console.log('[SW] All fonts already in OPFS.');
+      await broadcast({ type: 'INSTALL_COMPLETE' });
+      return;
+    }
+
+    console.log('[SW] Resuming font download: ' + alreadyDone + '/' + fontTotal + ' already stored.');
+    await broadcast({ type: 'INSTALL_PROGRESS', phase: 'fonts', loaded: alreadyDone, total: fontTotal, pct: Math.round(alreadyDone / fontTotal * 100) });
+
+    for (const batch of chunk(fonts, FBATCH)) {
+      await Promise.allSettled(batch.map(async function(url) {
+        const name = url.split('/').pop();
+        try {
+          if (await opfsHasFont(name)) { fontLoaded++; return; }
+          const r = await safeFetch(url);
+          if (!r) { fontLoaded++; return; }
+          const buf = await r.arrayBuffer();
+          await opfsWriteFont(name, buf);
+        } catch (e) {
+          console.warn('[SW] font skip:', name, e.message);
+        }
+        fontLoaded++;
+      }));
+      const total = alreadyDone + fontLoaded;
+      if (fontLoaded % 50 === 0 || total >= fontTotal) {
+        const pct = Math.round(total / fontTotal * 100);
+        console.log('[SW] Fonts ' + total + '/' + fontTotal + ' (' + pct + '%)');
+        await broadcast({ type: 'INSTALL_PROGRESS', phase: 'fonts', loaded: total, total: fontTotal, pct: pct });
+      }
+    }
+    console.log('[SW] All font binaries stored in OPFS.');
+    await broadcast({ type: 'INSTALL_COMPLETE' });
+  })());
 });
 
 // -------------------------------------------------------------------------------
@@ -229,7 +269,7 @@ self.addEventListener('fetch', function(event) {
       const cached = await caches.match(event.request);
       if (cached) return cached;
 
-      // 3. Network — store in OPFS for next time
+      // 3. Network ï¿½ store in OPFS for next time
       const r = await safeFetch(event.request);
       if (r) {
         r.clone().arrayBuffer().then(function(buf) { opfsWriteFont(name, buf); });
@@ -264,7 +304,7 @@ self.addEventListener('fetch', function(event) {
                  || await caches.match(new Request(scope + 'index.html'));
       if (root) return root;
 
-      // Absolute last resort — inline offline page
+      // Absolute last resort ï¿½ inline offline page
       return new Response(
         '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Offline</title>' +
         '<style>body{font-family:sans-serif;display:flex;align-items:center;' +
