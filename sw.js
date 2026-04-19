@@ -19,13 +19,6 @@ const PRECACHE_ASSETS = [
   './img/icon/excel.ico',
   './img/icon/ppt.ico',
 
-  // PDF.js viewer
-  './pdfjs/web/viewer.html',
-  './pdfjs/web/viewer.css',
-  './pdfjs/web/viewer.js',
-  './pdfjs/build/pdf.mjs',
-  './pdfjs/build/pdf.worker.mjs',
-
   // OnlyOffice API entry point
   './web-apps/apps/api/documents/api.js',
   './web-apps/vendor/jquery/jquery.min.js',
@@ -99,11 +92,19 @@ const PRECACHE_ASSETS = [
   './libs/sheetjs/xlsx.full.min.js',
 ];
 
-// Install event: Pre-cache critical assets for offline support
+// Install event: Pre-cache critical assets for offline support.
+// Uses individual cache.add() calls so a single missing/failing asset
+// does not abort the entire SW installation.
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(PRECACHE_ASSETS);
+      return Promise.allSettled(
+        PRECACHE_ASSETS.map((url) =>
+          cache.add(url).catch((err) => {
+            console.warn('[SW] Failed to precache (skipping):', url, err.message);
+          })
+        )
+      );
     }),
   );
   self.skipWaiting();
