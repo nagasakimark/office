@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'SW_VERSION_PLACEHOLDER'.includes('PLACEHOLDER') ? 'dev-' + Date.now() : 'SW_VERSION_PLACEHOLDER';
+const CACHE_VERSION = 'v2';
 const CACHE_NAME = `document-editor-${CACHE_VERSION}`;
 
 // Critical resources that must be pre-cached for offline support.
