@@ -293,7 +293,8 @@ self.addEventListener('fetch', function(event) {
         const r = await fetch(event.request);
         if (r && r.ok) {
           const cleanUrl = url.origin + url.pathname;
-          caches.open(CACHE_NAME).then(function(c) { c.put(cleanUrl, r.clone()); });
+          const rClone = r.clone();
+          caches.open(CACHE_NAME).then(function(c) { c.put(cleanUrl, rClone); });
           return r;
         }
       } catch(e) { /* offline */ }
@@ -332,7 +333,8 @@ self.addEventListener('fetch', function(event) {
 
     const r = await safeFetch(event.request);
     if (r) {
-      caches.open(CACHE_NAME).then(function(c) { c.put(event.request, r.clone()); });
+      const rClone = r.clone();
+      caches.open(CACHE_NAME).then(function(c) { c.put(event.request, rClone); });
       return r;
     }
 
