@@ -182,6 +182,15 @@ self.addEventListener('message', function(event) {
 
     if (fontTotal === 0) return;
 
+    // Verify OPFS is available before starting
+    try {
+      await opfsDir(true);
+    } catch (e) {
+      console.warn('[SW] OPFS not available:', e.message);
+      await broadcast({ type: 'OPFS_ERROR', message: e.message });
+      return;
+    }
+
     // Count how many are already in OPFS so we can show a real starting point.
     let alreadyDone = 0;
     for (const url of fonts) {
@@ -215,7 +224,7 @@ self.addEventListener('message', function(event) {
         fontLoaded++;  // exactly once per font, regardless of outcome
       }));
       const total = alreadyDone + fontLoaded;
-      if (fontLoaded % 50 === 0 || total >= fontTotal) {
+      if (fontLoaded % 10 === 0 || total >= fontTotal) {
         const pct = Math.round(total / fontTotal * 100);
         console.log('[SW] Fonts ' + total + '/' + fontTotal + ' (' + pct + '%)');
         await broadcast({ type: 'INSTALL_PROGRESS', phase: 'fonts', loaded: total, total: fontTotal, pct: pct });

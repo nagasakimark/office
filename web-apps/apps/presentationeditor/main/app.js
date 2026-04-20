@@ -65612,7 +65612,7 @@ var c_oHyperlinkType = { InternalLink: 0, WebLink: 1 },
                   'object' == typeof this.editorConfig.customization && this.editorConfig.customization.chat,
                   (this.appOptions.canPrint = !1 !== this.permissions.print),
                   (this.appOptions.canPreviewPrint =
-                    this.appOptions.canPrint && !Common.Utils.isMac && this.appOptions.isDesktopApp),
+                    this.appOptions.canPrint && !Common.Utils.isMac),
                   (this.appOptions.canQuickPrint =
                     this.appOptions.canPrint && !Common.Utils.isMac && this.appOptions.isDesktopApp),
                   (this.appOptions.canRename = this.editorConfig.canRename),
