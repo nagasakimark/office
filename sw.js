@@ -15,7 +15,7 @@
 //  a progress bar.  Also logged to the console.
 // -----------------------------------------------------------------------------
 
-const CACHE_VERSION = 'v4';
+const CACHE_VERSION = 'v5';
 const CACHE_NAME    = `doc-editor-${CACHE_VERSION}`;
 const OPFS_FONT_DIR = 'fonts';
 
@@ -78,7 +78,7 @@ function chunk(arr, size) {
 //  INSTALL
 // -------------------------------------------------------------------------------
 self.addEventListener('install', function(event) {
-  console.log('[SW] Installing v4...');
+  console.log('[SW] Installing v5...');
 
   event.waitUntil((async function() {
     // 1. Request persistent storage so the browser wont evict our caches.
